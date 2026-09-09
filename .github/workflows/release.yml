@@ -1,0 +1,112 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  build-and-release:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            artifact_name: SpotifyDownloader-Windows.exe
+          - os: macos-14
+            artifact_name: SpotifyDownloader-macOS.dmg
+          - os: ubuntu-latest
+            artifact_name: SpotifyDownloader-Linux.tar.gz
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+
+      # Linux dependencies for egui / winit / cpal (ALSA)
+      - name: Install Linux Build Dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libasound2-dev libudev-dev pkg-config libx11-dev libxcursor-dev libxi-dev libxrandr-dev libxinerama-dev libgl1-mesa-dev libfontconfig1-dev
+
+      - name: Build Rust Application
+        run: cargo build --release
+
+      # Packaging - Windows
+      - name: Package Windows Release
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          Copy-Item target/release/spotifydownloader.exe -Destination SpotifyDownloader-Windows.exe
+
+      # Packaging - macOS (.dmg)
+      - name: Package macOS Release
+        if: matrix.os == 'macos-14'
+        run: |
+          APP_DIR="SpotifyDownloader.app"
+          mkdir -p "$APP_DIR/Contents/MacOS"
+          mkdir -p "$APP_DIR/Contents/Resources"
+          cp target/release/spotifydownloader "$APP_DIR/Contents/MacOS/SpotifyDownloader"
+          chmod +x "$APP_DIR/Contents/MacOS/SpotifyDownloader"
+          cat << 'EOF' > "$APP_DIR/Contents/Info.plist"
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>CFBundleExecutable</key>
+              <string>SpotifyDownloader</string>
+              <key>CFBundleIdentifier</key>
+              <string>com.spotifydownloader.app</string>
+              <key>CFBundleName</key>
+              <string>SpotifyDownloader</string>
+              <key>CFBundleDisplayName</key>
+              <string>Spotify Downloader</string>
+              <key>CFBundlePackageType</key>
+              <string>APPL</string>
+              <key>CFBundleShortVersionString</key>
+              <string>0.1.0</string>
+              <key>CFBundleVersion</key>
+              <string>1</string>
+              <key>LSMinimumSystemVersion</key>
+              <string>11.0</string>
+              <key>NSHighResolutionCapable</key>
+              <true/>
+          </dict>
+          </plist>
+          EOF
+          mkdir -p dmg_root
+          cp -r "$APP_DIR" dmg_root/
+          ln -s /Applications dmg_root/Applications
+          hdiutil create -volname "SpotifyDownloader" -srcfolder dmg_root -ov -format UDZO SpotifyDownloader-macOS.dmg
+
+      # Packaging - Linux (.tar.gz)
+      - name: Package Linux Release
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          mkdir publish
+          cp target/release/spotifydownloader publish/
+          tar -czvf SpotifyDownloader-Linux.tar.gz -C publish .
+
+      # Upload to GitHub Release
+      - name: Create GitHub Release and Upload Binaries
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ matrix.artifact_name }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
