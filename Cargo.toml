@@ -1,0 +1,40 @@
+[package]
+name = "spotifydownloader"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+eframe = { version = "0.31", default-features = false, features = ["default_fonts", "glow"] }
+egui = "0.31"
+egui_extras = { version = "0.31", features = ["all_loaders"] }
+image = { version = "0.25", default-features = false, features = ["jpeg", "png"] }
+tokio = { version = "1", features = ["full"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls", "stream"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+rfd = "0.15"
+directories = "6"
+regex = "1.11"
+url = "2.5"
+urlencoding = "2.1"
+id3 = "1.16"
+metaflac = "0.2"
+mp4ameta = "0.12"
+arboard = "3.4"
+anyhow = "1.0"
+thiserror = "2.0"
+rodio = "0.20"
+cpal = "0.15"
+open = "5"
+rand = "0.9"
+base64 = "0.22"
+sha2 = "0.10"
+librespot-core = { version = "0.8.0", default-features = false, features = ["rustls-tls-native-roots"] }
+librespot-audio = { version = "0.8.0", default-features = false, features = ["rustls-tls-native-roots"] }
+librespot-metadata = { version = "0.8.0", default-features = false }
+
+[patch.crates-io]
+librespot-audio = { git = "https://github.com/crmne/librespot", branch = "fastpotify-0.8" }
+librespot-core = { git = "https://github.com/crmne/librespot", branch = "fastpotify-0.8" }
+librespot-metadata = { git = "https://github.com/crmne/librespot", branch = "fastpotify-0.8" }
+librespot-protocol = { git = "https://github.com/crmne/librespot", branch = "fastpotify-0.8" }
