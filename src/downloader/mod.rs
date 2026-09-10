@@ -5,12 +5,13 @@ pub mod spotify_stream;
 pub mod tagger;
 
 use std::path::PathBuf;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, OnceLock};
 use std::time::Instant;
 use anyhow::{Context, Result, bail};
 use tokio::sync::mpsc;
 
 use crate::auth::AuthManager;
+use crate::downloader::encoder::silent_command;
 use crate::model::{AudioFormat, DownloadItem, DownloadStatus, TrackMetadata, UserSettings};
 use crate::spotify::SpotifyClient;
 
@@ -279,15 +280,15 @@ async fn download_audio_stream(
     let query = format!("ytsearch1:{} - {}", track.primary_artist(), track.title);
 
     if let Some(ytdlp) = &yt_dlp_path {
-        let mut cmd = std::process::Command::new(ytdlp);
+        let mut cmd = silent_command(ytdlp);
         cmd.arg("-f").arg("bestaudio/best");
         cmd.arg("--no-playlist");
         cmd.arg("-x");
         cmd.arg("--output").arg(&output_template);
         cmd.arg(&query);
 
-        if let Ok(s) = cmd.status() {
-            if s.success() {
+        if let Ok(out) = cmd.output() {
+            if out.status.success() {
                 if let Some(file) = find_audio_file_in_dir(temp_dir) {
                     return Ok(file);
                 }
@@ -319,15 +320,15 @@ async fn download_audio_stream(
 
     // If we have yt-dlp and direct link, try with that
     if let (Some(ytdlp), Some(url)) = (&yt_dlp_path, &stream_url) {
-        let mut cmd = std::process::Command::new(ytdlp);
+        let mut cmd = silent_command(ytdlp);
         cmd.arg("-f").arg("bestaudio/best");
         cmd.arg("--no-playlist");
         cmd.arg("-x");
         cmd.arg("--output").arg(&output_template);
         cmd.arg(url);
 
-        if let Ok(s) = cmd.status() {
-            if s.success() {
+        if let Ok(out) = cmd.output() {
+            if out.status.success() {
                 if let Some(file) = find_audio_file_in_dir(temp_dir) {
                     return Ok(file);
                 }
@@ -396,15 +397,15 @@ async fn download_audio_stream(
 
     // Fallback: yt-dlp search query
     if let Some(ytdlp) = &yt_dlp_path {
-        let mut cmd = std::process::Command::new(ytdlp);
+        let mut cmd = silent_command(ytdlp);
         cmd.arg("-f").arg("bestaudio/best");
         cmd.arg("--no-playlist");
         cmd.arg("-x");
         cmd.arg("--output").arg(&output_template);
         cmd.arg(format!("ytsearch:{} {}", track.primary_artist(), track.title));
 
-        if let Ok(s) = cmd.status() {
-            if s.success() {
+        if let Ok(out) = cmd.output() {
+            if out.status.success() {
                 if let Some(file) = find_audio_file_in_dir(temp_dir) {
                     return Ok(file);
                 }
@@ -432,17 +433,32 @@ fn find_audio_file_in_dir(dir: &std::path::Path) -> Option<PathBuf> {
     None
 }
 
+static CACHED_YTDLP: OnceLock<Option<PathBuf>> = OnceLock::new();
+
 fn find_ytdlp() -> Option<PathBuf> {
-    if let Ok(out) = std::process::Command::new("yt-dlp").arg("--version").output() {
-        if out.status.success() {
-            return Some(PathBuf::from("yt-dlp"));
+    CACHED_YTDLP.get_or_init(|| {
+        let mut cmd = silent_command("yt-dlp");
+        cmd.arg("--version");
+        if let Ok(out) = cmd.output() {
+            if out.status.success() {
+                return Some(PathBuf::from("yt-dlp"));
+            }
         }
-    }
 
-    let reference = PathBuf::from(r"c:\Users\joshu\RustroverProjects\spotifydownloader\.private\Spotify-Downloader-main\Spotify Downloader\yt-dlp.exe");
-    if reference.exists() {
-        return Some(reference);
-    }
+        let reference = PathBuf::from(r"c:\Users\joshu\RustroverProjects\spotifydownloader\.private\Spotify-Downloader-main\Spotify Downloader\yt-dlp.exe");
+        if reference.exists() {
+            return Some(reference);
+        }
 
-    None
+        if let Ok(exe) = std::env::current_exe() {
+            if let Some(dir) = exe.parent() {
+                let local_ytdlp = dir.join("yt-dlp.exe");
+                if local_ytdlp.exists() {
+                    return Some(local_ytdlp);
+                }
+            }
+        }
+
+        None
+    }).clone()
 }
