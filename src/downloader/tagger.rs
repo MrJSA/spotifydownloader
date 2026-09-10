@@ -31,6 +31,18 @@ fn tag_mp3(file_path: &Path, metadata: &TrackMetadata, cover_data: Option<&[u8]>
 
     if let Ok(year) = metadata.release_date.split('-').next().unwrap_or("").parse::<i32>() {
         tag.set_year(year);
+        tag.set_date_recorded(id3::Timestamp {
+            year,
+            month: None,
+            day: None,
+            hour: None,
+            minute: None,
+            second: None,
+        });
+    }
+
+    if let Some(genre) = &metadata.genre {
+        tag.set_genre(genre);
     }
 
     if let Some(cover) = cover_data {
@@ -43,7 +55,8 @@ fn tag_mp3(file_path: &Path, metadata: &TrackMetadata, cover_data: Option<&[u8]>
         });
     }
 
-    tag.write_to_path(file_path, id3::Version::Id3v24)
+    // Write ID3v2.3 so Windows Explorer natively shows Year, Genre, Artists, and Artwork in File Details
+    tag.write_to_path(file_path, id3::Version::Id3v23)
         .context("Failed to write ID3v2 tags to MP3")?;
     Ok(())
 }
@@ -62,6 +75,13 @@ fn tag_flac(file_path: &Path, metadata: &TrackMetadata, cover_data: Option<&[u8]
 
     if !metadata.release_date.is_empty() {
         vorbis.set("DATE", vec![metadata.release_date.clone()]);
+        if let Ok(year) = metadata.release_date.split('-').next().unwrap_or("").parse::<i32>() {
+            vorbis.set("YEAR", vec![year.to_string()]);
+        }
+    }
+
+    if let Some(genre) = &metadata.genre {
+        vorbis.set("GENRE", vec![genre.clone()]);
     }
 
     if let Some(isrc) = &metadata.isrc {
@@ -97,6 +117,10 @@ fn tag_m4a(file_path: &Path, metadata: &TrackMetadata, cover_data: Option<&[u8]>
 
     if !metadata.release_date.is_empty() {
         tag.set_year(&metadata.release_date);
+    }
+
+    if let Some(genre) = &metadata.genre {
+        tag.set_genre(genre);
     }
 
     if let Some(cover) = cover_data {

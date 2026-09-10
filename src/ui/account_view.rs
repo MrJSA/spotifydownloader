@@ -51,12 +51,26 @@ pub fn render_account_view(
                             if let Some(email) = profile.email {
                                 ui.label(RichText::new(email).color(palette.dim));
                             }
-                            if is_premium {
+                            let has_cdn = auth.has_cdn_session();
+                            if has_cdn {
                                 ui.label(
-                                    RichText::new("🟢 SPOTIFY PREMIUM • Direct 320 kbps Downloads Active")
+                                    RichText::new("🟢 SPOTIFY PREMIUM • Direct 320 kbps Stream Active")
                                         .size(12.0)
                                         .color(palette.accent)
                                         .strong(),
+                                );
+                            } else if is_premium {
+                                ui.label(
+                                    RichText::new("🔵 SPOTIFY WEB CONNECTED • High-Bitrate Resolver Active")
+                                        .size(12.0)
+                                        .color(palette.secondary)
+                                        .strong(),
+                                );
+                                ui.add_space(2.0);
+                                ui.label(
+                                    RichText::new("ℹ To enable direct 320 kbps CDN streaming from Spotify's servers, sign in below with Option B (Username & Password).")
+                                        .size(11.0)
+                                        .color(palette.dim),
                                 );
                             } else {
                                 ui.label(
@@ -77,6 +91,56 @@ pub fn render_account_view(
                             }
                         });
                     });
+
+                    if is_premium && !auth.has_cdn_session() {
+                        ui.add_space(16.0);
+                        ui.separator();
+                        ui.add_space(12.0);
+                        ui.label(
+                            RichText::new("Direct Spotify Stream Authentication (Optional)")
+                                .size(14.0)
+                                .color(palette.text)
+                                .strong(),
+                        );
+                        ui.label(
+                            RichText::new("Spotify Access Points require direct credential handshake to stream encrypted 320 kbps Vorbis.")
+                                .size(11.0)
+                                .color(palette.dim),
+                        );
+                        ui.add_space(8.0);
+
+                        let id_user = ui.make_persistent_id("login_username_opt");
+                        let id_pass = ui.make_persistent_id("login_password_opt");
+                        let mut username = ui.data_mut(|d| d.get_temp::<String>(id_user).unwrap_or_default());
+                        let mut password = ui.data_mut(|d| d.get_temp::<String>(id_pass).unwrap_or_default());
+
+                        ui.horizontal(|ui| {
+                            ui.label(RichText::new("Username / Email:").color(palette.dim));
+                            ui.add(TextEdit::singleline(&mut username).desired_width(180.0));
+                            ui.add_space(8.0);
+                            ui.label(RichText::new("Password:").color(palette.dim));
+                            ui.add(TextEdit::singleline(&mut password).password(true).desired_width(180.0));
+
+                            let creds_btn = Button::new(RichText::new("Connect Direct Stream").color(palette.text).strong())
+                                .fill(palette.surface_active)
+                                .stroke(Stroke::new(1.0, palette.outline))
+                                .corner_radius(CornerRadius::same(RADIUS_SMALL as u8));
+
+                            if ui.add_enabled(!username.is_empty() && !password.is_empty(), creds_btn).clicked() {
+                                let auth_clone = auth.clone();
+                                let u = username.clone();
+                                let p = password.clone();
+                                tokio::spawn(async move {
+                                    let _ = auth_clone.login_with_credentials(&u, &p).await;
+                                });
+                            }
+                        });
+
+                        ui.data_mut(|d| {
+                            d.insert_temp(id_user, username);
+                            d.insert_temp(id_pass, password);
+                        });
+                    }
                 }
             } else {
                 ui.vertical(|ui| {

@@ -48,12 +48,16 @@ pub fn render_queue_view(
         return;
     }
 
-    egui::ScrollArea::vertical().show(ui, |ui| {
-        for item in queue_items {
-            render_queue_row(ui, &item, manager, palette);
-            ui.add_space(6.0);
-        }
-    });
+    let full_width = ui.available_width().max(400.0);
+
+    egui::ScrollArea::vertical()
+        .auto_shrink([false, false])
+        .show(ui, |ui| {
+            for item in queue_items {
+                render_queue_row(ui, &item, manager, palette, full_width);
+                ui.add_space(6.0);
+            }
+        });
 }
 
 fn render_queue_row(
@@ -61,15 +65,19 @@ fn render_queue_row(
     item: &crate::model::DownloadItem,
     manager: &DownloadManager,
     palette: &Palette,
+    row_width: f32,
 ) {
-    let desired_w = ui.available_width();
+    let card_width = (row_width - 8.0).max(300.0);
+    let inner_width = card_width - 24.0; // Subtract left & right 12px margin
+
     egui::Frame::NONE
         .fill(palette.surface)
         .stroke(Stroke::new(1.0, palette.outline))
         .corner_radius(CornerRadius::same(RADIUS as u8))
         .inner_margin(egui::Margin::same(12))
         .show(ui, |ui| {
-            ui.set_width(desired_w);
+            ui.set_width(inner_width);
+            ui.set_max_width(inner_width);
 
             ui.horizontal(|ui| {
                 // Format badge
@@ -94,22 +102,37 @@ fn render_queue_row(
 
                 ui.add_space(8.0);
 
-                // Track Title & Artist
-                ui.vertical(|ui| {
-                    ui.label(
-                        RichText::new(&item.track.title)
-                            .size(14.0)
-                            .color(palette.text)
-                            .strong(),
-                    );
-                    ui.label(
-                        RichText::new(format!("{} • {}", item.track.primary_artist(), item.track.album))
-                            .size(12.0)
-                            .color(palette.dim),
-                    );
-                });
+                // Right controls width reserve: ~320px
+                let right_controls_width = 330.0;
+                let title_max_width = (inner_width - right_controls_width - 60.0).max(120.0);
 
-                // Status & Controls (on the right)
+                // Track Title & Artist (constrained to prevent pushing right buttons)
+                ui.allocate_ui_with_layout(
+                    egui::vec2(title_max_width, 36.0),
+                    egui::Layout::top_down(egui::Align::Min),
+                    |ui| {
+                        ui.set_max_width(title_max_width);
+                        ui.add(
+                            egui::Label::new(
+                                RichText::new(&item.track.title)
+                                    .size(14.0)
+                                    .color(palette.text)
+                                    .strong(),
+                            )
+                            .truncate(),
+                        );
+                        ui.add(
+                            egui::Label::new(
+                                RichText::new(format!("{} • {}", item.track.primary_artist(), item.track.album))
+                                    .size(12.0)
+                                    .color(palette.dim),
+                            )
+                            .truncate(),
+                        );
+                    },
+                );
+
+                // Status & Controls (pinned to the right)
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     // Remove button
                     if ui.button("❌").clicked() {

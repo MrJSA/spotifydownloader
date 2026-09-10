@@ -285,6 +285,7 @@ impl SpotifyClient {
                             let duration_ms = item["trackTimeMillis"].as_u64().unwrap_or(0);
                             let track_number = item["trackNumber"].as_u64().unwrap_or(1) as u32;
                             let cover_url = item["artworkUrl100"].as_str().map(|u| u.replace("100x100bb", "600x600bb"));
+                            let genre = item["primaryGenreName"].as_str().map(str::to_string);
                             let id = item["trackId"].as_u64().unwrap_or(0).to_string();
 
                             results.tracks.push(crate::model::TrackMetadata {
@@ -297,6 +298,7 @@ impl SpotifyClient {
                                 track_number,
                                 disc_number: 1,
                                 release_date: "".to_string(),
+                                genre,
                                 isrc: None,
                                 cover_url,
                                 spotify_url: format!("https://open.spotify.com/track/{}", id),
@@ -419,6 +421,7 @@ impl SpotifyClient {
                                 let dur_ms = item["trackTimeMillis"].as_u64().unwrap_or(0);
                                 let track_artist = item["artistName"].as_str().unwrap_or(&artist).to_string();
                                 let release = item["releaseDate"].as_str().unwrap_or("").to_string();
+                                let genre = item["primaryGenreName"].as_str().map(str::to_string);
 
                                 tracks.push(crate::model::TrackMetadata {
                                     id: item["trackId"].as_u64().unwrap_or(0).to_string(),
@@ -430,6 +433,7 @@ impl SpotifyClient {
                                     track_number: track_num,
                                     disc_number: disc_num,
                                     release_date: release,
+                                    genre,
                                     isrc: None,
                                     cover_url: cover_url.clone(),
                                     spotify_url: format!("https://open.spotify.com/track/{}", item["trackId"].as_u64().unwrap_or(0)),
@@ -555,6 +559,12 @@ impl SpotifyClient {
             bail!("No tracks returned from Spotify API for album {}", id);
         }
 
+        let album_genre = resp["genres"]
+            .as_array()
+            .and_then(|g| g.first())
+            .and_then(|v| v.as_str())
+            .map(str::to_string);
+
         let mut tracks = Vec::new();
         for (idx, item) in raw_items.iter().enumerate() {
             let artists: Vec<String> = item["artists"]
@@ -571,6 +581,7 @@ impl SpotifyClient {
                 album_artist: Some(artist_name.clone()),
                 album: album_name.clone(),
                 release_date: release_date.clone(),
+                genre: album_genre.clone(),
                 track_number: (idx + 1) as u32,
                 disc_number: item["disc_number"].as_u64().unwrap_or(1) as u32,
                 duration_ms: item["duration_ms"].as_u64().unwrap_or(0),
@@ -672,6 +683,7 @@ impl SpotifyClient {
                             album_artist: Some(artist.clone()),
                             album: "Single".to_string(),
                             release_date: String::new(),
+                            genre: None,
                             track_number: 1,
                             disc_number: 1,
                             duration_ms: 0,
@@ -710,6 +722,7 @@ impl SpotifyClient {
             album_artist: None,
             album: "Unknown Album".to_string(),
             release_date: String::new(),
+            genre: None,
             track_number: 1,
             disc_number: 1,
             duration_ms: 0,
@@ -844,9 +857,15 @@ impl SpotifyClient {
                                 .map(str::to_string);
                         }
 
+                        let album_release_date = entity["releaseDate"]["isoString"]
+                            .as_str()
+                            .or_else(|| entity["releaseDate"].as_str())
+                            .unwrap_or("")
+                            .to_string();
+
                         if coll_type == CollectionType::Track {
                             let duration_ms = entity["duration"].as_u64().unwrap_or(0);
-                            let release_date = entity["releaseDate"]["isoString"].as_str().unwrap_or("").to_string();
+                            let release_date = album_release_date.clone();
                             let track_artists: Vec<String> = entity["artists"]
                                 .as_array()
                                 .unwrap_or(&vec![])
@@ -862,6 +881,7 @@ impl SpotifyClient {
                                 album_artist: Some(artist_name.clone()),
                                 album: "Single".to_string(),
                                 release_date,
+                                genre: None,
                                 track_number: 1,
                                 disc_number: 1,
                                 duration_ms,
@@ -906,7 +926,8 @@ impl SpotifyClient {
                                     artists,
                                     album_artist: album_artist.clone(),
                                     album: title.clone(),
-                                    release_date: String::new(),
+                                    release_date: album_release_date.clone(),
+                                    genre: None,
                                     track_number: (idx + 1) as u32,
                                     disc_number: 1,
                                     duration_ms,
@@ -938,6 +959,30 @@ impl SpotifyClient {
         let resp = self.http.get(url).send().await?;
         let bytes = resp.bytes().await?;
         Ok(bytes.to_vec())
+    }
+
+    /// Tries to resolve a genre using iTunes Search API given artist and album/title.
+    pub async fn fetch_genre_fallback(&self, artist: &str, album_or_title: &str) -> Option<String> {
+        let query = format!("{} {}", artist, album_or_title);
+        let url = format!(
+            "https://itunes.apple.com/search?term={}&entity=song&limit=1",
+            urlencoding::encode(&query)
+        );
+
+        if let Ok(resp) = self.http.get(&url).send().await {
+            if let Ok(val) = resp.json::<Value>().await {
+                if let Some(items) = val["results"].as_array() {
+                    if let Some(first) = items.first() {
+                        if let Some(genre) = first["primaryGenreName"].as_str() {
+                            if !genre.trim().is_empty() {
+                                return Some(genre.to_string());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        None
     }
 }
 
@@ -976,6 +1021,7 @@ fn parse_api_track(item: &Value) -> Result<TrackMetadata> {
         album_artist,
         album,
         release_date,
+        genre: None,
         track_number,
         disc_number,
         duration_ms,

@@ -239,7 +239,16 @@ async fn run_download_pipeline(
         destination_path: Some(dest_path.clone()),
     });
 
-    tagger::tag_file(&dest_path, format, track, cover_data.as_deref())
+    let mut enriched_track = track.clone();
+    if enriched_track.genre.is_none() {
+        if let Some(genre) = spotify.fetch_genre_fallback(track.primary_artist(), &track.album).await {
+            enriched_track.genre = Some(genre);
+        } else if let Some(genre) = spotify.fetch_genre_fallback(track.primary_artist(), &track.title).await {
+            enriched_track.genre = Some(genre);
+        }
+    }
+
+    tagger::tag_file(&dest_path, format, &enriched_track, cover_data.as_deref())
         .context("Failed to embed tags and cover art")?;
 
     Ok(dest_path)
@@ -263,14 +272,21 @@ async fn download_audio_stream(
             track.id
         );
 
-        if let Ok(()) = spotify_stream::download_spotify_track(&session, &track.id, &spotify_stream_path).await {
-            if spotify_stream_path.exists() && std::fs::metadata(&spotify_stream_path).map(|m| m.len() > 0).unwrap_or(false) {
-                eprintln!("[Direct Spotify] Successfully downloaded track directly from Spotify servers!");
-                return Ok(spotify_stream_path);
+        match spotify_stream::download_spotify_track(&session, &track.id, &spotify_stream_path).await {
+            Ok(()) => {
+                if spotify_stream_path.exists() && std::fs::metadata(&spotify_stream_path).map(|m| m.len() > 0).unwrap_or(false) {
+                    eprintln!("[Direct Spotify] Successfully downloaded track directly from Spotify servers at 320 kbps!");
+                    return Ok(spotify_stream_path);
+                }
             }
-        } else {
-            eprintln!("[Direct Spotify] Direct stream failed or restricted; falling back to multi-source resolver.");
+            Err(e) => {
+                eprintln!("[Direct Spotify] Stream attempt failed: {:?}; falling back to multi-source resolver.", e);
+            }
         }
+    } else {
+        eprintln!(
+            "[Downloader] Direct Spotify CDN session not connected (requires Option B credentials). Using multi-source resolver."
+        );
     }
 
     let output_template = temp_dir.join("stream.%(ext)s");

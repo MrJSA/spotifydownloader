@@ -50,6 +50,7 @@ pub struct TrackMetadata {
     pub disc_number: u32,
     pub duration_ms: u64,
     pub isrc: Option<String>,
+    pub genre: Option<String>,
     pub cover_url: Option<String>,
     pub spotify_url: String,
 }

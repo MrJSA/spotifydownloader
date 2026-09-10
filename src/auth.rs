@@ -292,9 +292,15 @@ impl AuthManager {
         Ok(())
     }
 
+    /// Checks if a direct Spotify CDN streaming session is currently active.
+    pub fn has_cdn_session(&self) -> bool {
+        self.session.try_lock().map(|s| s.is_some()).unwrap_or(false)
+    }
+
     /// Initializes a librespot session using the current OAuth access token if user is Premium.
     pub async fn init_librespot_session(&self) {
         if !self.is_premium() {
+            eprintln!("[Spotify Auth] Account is not Premium; direct CDN stream requires Premium.");
             return;
         }
 
@@ -309,9 +315,19 @@ impl AuthManager {
         };
 
         let session = Session::new(session_config, None);
-        if let Ok(()) = session.connect(creds, true).await {
-            let mut s_guard = self.session.lock().await;
-            *s_guard = Some(session);
+        match session.connect(creds, true).await {
+            Ok(()) => {
+                eprintln!("[Spotify Auth] Direct Spotify CDN session established successfully via token!");
+                let mut s_guard = self.session.lock().await;
+                *s_guard = Some(session);
+            }
+            Err(err) => {
+                eprintln!(
+                    "[Spotify Auth] Note: Direct AP connection with OAuth token rejected ({:?}). \
+                    Use Option B (Username & Password) to enable direct 320 kbps Spotify CDN stream.",
+                    err
+                );
+            }
         }
     }
 

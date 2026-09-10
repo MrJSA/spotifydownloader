@@ -70,6 +70,7 @@ mod tests {
             disc_number: 1,
             duration_ms: 233000,
             isrc: None,
+            genre: Some("Pop".into()),
             cover_url: None,
             spotify_url: "".into(),
         };
