@@ -19,6 +19,8 @@ pub struct Palette {
     pub flac_badge: Color32,
     pub mp3_badge: Color32,
     pub m4a_badge: Color32,
+    pub wav_badge: Color32,
+    pub aiff_badge: Color32,
 }
 
 impl Palette {
@@ -44,6 +46,8 @@ impl Palette {
             flac_badge: Color32::from_rgb(0x8a, 0x5c, 0xf6),
             mp3_badge: Color32::from_rgb(0x3b, 0x82, 0xf6),
             m4a_badge: Color32::from_rgb(0xf5, 0x9e, 0x0b),
+            wav_badge: Color32::from_rgb(0x10, 0xb9, 0x81),
+            aiff_badge: Color32::from_rgb(0x06, 0xb6, 0xd4),
         }
     }
 }

@@ -65,14 +65,29 @@ pub fn transcode_audio(
     cmd.arg("-i").arg(input_file);
 
     match format {
-        AudioFormat::Mp3 => {
+        AudioFormat::Mp3_320 => {
             cmd.args(["-c:a", "libmp3lame", "-b:a", "320k"]);
         }
-        AudioFormat::M4a => {
+        AudioFormat::Mp3_192 => {
+            cmd.args(["-c:a", "libmp3lame", "-b:a", "192k"]);
+        }
+        AudioFormat::Mp3_128 => {
+            cmd.args(["-c:a", "libmp3lame", "-b:a", "128k"]);
+        }
+        AudioFormat::M4aAlac => {
             cmd.args(["-c:a", "alac"]);
+        }
+        AudioFormat::M4aAac => {
+            cmd.args(["-c:a", "aac", "-b:a", "256k"]);
         }
         AudioFormat::Flac => {
             cmd.args(["-c:a", "flac"]);
+        }
+        AudioFormat::Wav => {
+            cmd.args(["-c:a", "pcm_s16le"]);
+        }
+        AudioFormat::Aiff => {
+            cmd.args(["-c:a", "pcm_s16be"]);
         }
     }
 
@@ -111,14 +126,29 @@ pub fn encode_pcm_to_file(
     cmd.args(["-i", "pipe:0"]);
 
     match format {
-        AudioFormat::Mp3 => {
+        AudioFormat::Mp3_320 => {
             cmd.args(["-c:a", "libmp3lame", "-b:a", "320k"]);
         }
-        AudioFormat::M4a => {
+        AudioFormat::Mp3_192 => {
+            cmd.args(["-c:a", "libmp3lame", "-b:a", "192k"]);
+        }
+        AudioFormat::Mp3_128 => {
+            cmd.args(["-c:a", "libmp3lame", "-b:a", "128k"]);
+        }
+        AudioFormat::M4aAlac => {
             cmd.args(["-c:a", "alac"]);
+        }
+        AudioFormat::M4aAac => {
+            cmd.args(["-c:a", "aac", "-b:a", "256k"]);
         }
         AudioFormat::Flac => {
             cmd.args(["-c:a", "flac"]);
+        }
+        AudioFormat::Wav => {
+            cmd.args(["-c:a", "pcm_s16le"]);
+        }
+        AudioFormat::Aiff => {
+            cmd.args(["-c:a", "pcm_s16be"]);
         }
     }
 

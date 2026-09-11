@@ -78,9 +78,27 @@ pub fn render_settings_view(
                         });
                 });
 
-                ui.add_space(8.0);
+                ui.add_space(10.0);
                 ui.label(
-                    RichText::new("• FLAC: True Lossless 16/24-bit audio stream (Best fidelity)\n• M4A: ALAC Apple Lossless audio stream (Native Apple/iTunes Lossless)\n• MP3: 320 kbps high-bitrate LAME encoding")
+                    RichText::new("Lossless Formats:")
+                        .size(12.0)
+                        .color(palette.text)
+                        .strong(),
+                );
+                ui.label(
+                    RichText::new("• FLAC: Lossless 16/24-bit audio stream (Audiophile reference, open standard)\n• M4A (ALAC): Apple Lossless audio stream (Native for Apple Music, iOS & macOS)\n• WAV: Uncompressed 16-bit PCM (Maximum compatibility with DAWs & audio editors)\n• AIFF: Apple uncompressed audio interchange format (16-bit PCM)")
+                        .size(11.0)
+                        .color(palette.dim),
+                );
+                ui.add_space(6.0);
+                ui.label(
+                    RichText::new("Compressed Formats:")
+                        .size(12.0)
+                        .color(palette.text)
+                        .strong(),
+                );
+                ui.label(
+                    RichText::new("• M4A (AAC): 256 kbps Advanced Audio Coding (Standard iTunes/Apple quality)\n• MP3 (320 kbps): Extreme high-bitrate MP3 via LAME (Maximum MP3 fidelity)\n• MP3 (192 kbps): Very high quality MP3 (Balanced fidelity and storage)\n• MP3 (128 kbps): Standard quality MP3 (Lightweight, small file sizes)")
                         .size(11.0)
                         .color(palette.dim),
                 );

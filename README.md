@@ -27,7 +27,7 @@ A high-performance, modern cross-platform desktop application to search, browse,
 | :--- | :--- |
 | **🎨 Fastpotify-Inspired UI** | Sleek, dark Spotify aesthetic (`#1ed760` accent) built with `egui` and `eframe` for 0 web bloat, instant launch, and 60 FPS responsiveness. |
 | **⚡ Dual Download Pipeline** | Direct 320 kbps Vorbis decryption from Spotify Access Points (Premium) with automatic high-bitrate multi-source resolver fallback (Free & unauthenticated). |
-| **🎧 Audiophile Quality Formats** | Seamless format toggle between **FLAC** (Lossless 16-bit / 44.1 kHz), **M4A** (ALAC Apple Lossless), and **MP3** (320 kbps LAME). |
+| **🎧 Audiophile Quality Formats** | Complete format freedom: **FLAC** (Lossless), **M4A (ALAC Lossless)**, **WAV** (16-bit PCM), **AIFF** (Apple PCM), **M4A (256 kbps AAC)**, and **MP3** (320, 192, and 128 kbps). |
 | **🔍 In-App Catalog Browsing** | Search artists, albums, and tracks directly inside the app with 1-click album downloads and artist discography navigation. |
 | **🔗 Universal Link Support** | Paste any Spotify URL (track, album, playlist, artist, localized or mobile shortlinks) for immediate retrieval. |
 | **🏷️ Rich Metadata & Cover Art** | Automatically embeds album artwork (`covr`, `APIC`, `METADATA_BLOCK_PICTURE`), tags (title, artist, album, year, track number), and saves `cover.jpg`. |

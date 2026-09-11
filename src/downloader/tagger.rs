@@ -11,9 +11,11 @@ pub fn tag_file(
     cover_data: Option<&[u8]>,
 ) -> Result<()> {
     match format {
-        AudioFormat::Mp3 => tag_mp3(file_path, metadata, cover_data),
+        AudioFormat::Mp3_320 | AudioFormat::Mp3_192 | AudioFormat::Mp3_128 | AudioFormat::Wav | AudioFormat::Aiff => {
+            tag_mp3(file_path, metadata, cover_data)
+        }
         AudioFormat::Flac => tag_flac(file_path, metadata, cover_data),
-        AudioFormat::M4a => tag_m4a(file_path, metadata, cover_data),
+        AudioFormat::M4aAlac | AudioFormat::M4aAac => tag_m4a(file_path, metadata, cover_data),
     }
 }
 

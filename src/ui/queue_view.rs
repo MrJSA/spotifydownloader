@@ -83,8 +83,11 @@ fn render_queue_row(
                 // Format badge
                 let badge_color = match item.format {
                     AudioFormat::Flac => palette.flac_badge,
-                    AudioFormat::Mp3 => palette.mp3_badge,
-                    AudioFormat::M4a => palette.m4a_badge,
+                    AudioFormat::M4aAlac => palette.wav_badge,
+                    AudioFormat::Wav => palette.wav_badge,
+                    AudioFormat::Aiff => palette.aiff_badge,
+                    AudioFormat::M4aAac => palette.m4a_badge,
+                    AudioFormat::Mp3_320 | AudioFormat::Mp3_192 | AudioFormat::Mp3_128 => palette.mp3_badge,
                 };
                 let badge_frame = egui::Frame::NONE
                     .fill(badge_color)
@@ -197,7 +200,7 @@ fn render_queue_row(
 
 fn color32_text_for_badge(format: AudioFormat, palette: &Palette) -> egui::Color32 {
     match format {
-        AudioFormat::Flac | AudioFormat::Mp3 => palette.text,
-        AudioFormat::M4a => palette.on_accent,
+        AudioFormat::Flac | AudioFormat::Mp3_320 | AudioFormat::Mp3_192 | AudioFormat::Mp3_128 => palette.text,
+        AudioFormat::M4aAlac | AudioFormat::M4aAac | AudioFormat::Wav | AudioFormat::Aiff => palette.on_accent,
     }
 }

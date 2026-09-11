@@ -4,36 +4,76 @@ use std::path::PathBuf;
 /// Supported output audio formats.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum AudioFormat {
-    Mp3,
-    M4a,
+    #[serde(alias = "Mp3")]
+    Mp3_320,
+    Mp3_192,
+    Mp3_128,
     Flac,
+    #[serde(alias = "M4a")]
+    M4aAlac,
+    M4aAac,
+    Wav,
+    Aiff,
 }
 
 impl AudioFormat {
-    pub const ALL: [Self; 3] = [Self::Mp3, Self::M4a, Self::Flac];
+    pub const ALL: [Self; 8] = [
+        Self::Flac,
+        Self::M4aAlac,
+        Self::Wav,
+        Self::Aiff,
+        Self::M4aAac,
+        Self::Mp3_320,
+        Self::Mp3_192,
+        Self::Mp3_128,
+    ];
+
+    // Quick-switch presets for the top bar
+    pub const QUICK_PRESETS: [Self; 4] = [
+        Self::Flac,
+        Self::M4aAlac,
+        Self::M4aAac,
+        Self::Mp3_320,
+    ];
 
     pub fn display_name(&self) -> &'static str {
         match self {
-            Self::Mp3 => "MP3 (320 kbps)",
-            Self::M4a => "M4A (ALAC Lossless)",
             Self::Flac => "FLAC (Lossless)",
+            Self::M4aAlac => "M4A (ALAC Lossless)",
+            Self::Wav => "WAV (Lossless 16-bit)",
+            Self::Aiff => "AIFF (Lossless 16-bit)",
+            Self::M4aAac => "M4A (256 kbps AAC)",
+            Self::Mp3_320 => "MP3 (320 kbps)",
+            Self::Mp3_192 => "MP3 (192 kbps)",
+            Self::Mp3_128 => "MP3 (128 kbps)",
         }
     }
 
     pub fn short_name(&self) -> &'static str {
         match self {
-            Self::Mp3 => "MP3",
-            Self::M4a => "M4A",
             Self::Flac => "FLAC",
+            Self::M4aAlac => "ALAC",
+            Self::Wav => "WAV",
+            Self::Aiff => "AIFF",
+            Self::M4aAac => "AAC",
+            Self::Mp3_320 => "MP3 320k",
+            Self::Mp3_192 => "MP3 192k",
+            Self::Mp3_128 => "MP3 128k",
         }
     }
 
     pub fn extension(&self) -> &'static str {
         match self {
-            Self::Mp3 => "mp3",
-            Self::M4a => "m4a",
             Self::Flac => "flac",
+            Self::M4aAlac | Self::M4aAac => "m4a",
+            Self::Wav => "wav",
+            Self::Aiff => "aiff",
+            Self::Mp3_320 | Self::Mp3_192 | Self::Mp3_128 => "mp3",
         }
+    }
+
+    pub fn is_lossless(&self) -> bool {
+        matches!(self, Self::Flac | Self::M4aAlac | Self::Wav | Self::Aiff)
     }
 }
 
@@ -267,7 +307,7 @@ mod tests {
     fn test_user_settings_serialization_round_trip() {
         let settings = UserSettings {
             download_dir: PathBuf::from("C:/Custom/Music/Path"),
-            default_format: AudioFormat::M4a,
+            default_format: AudioFormat::M4aAlac,
             play_while_recording: true,
             max_concurrent_downloads: 5,
             folder_structure: "{artist}/{album}/{title}".to_string(),
@@ -277,7 +317,17 @@ mod tests {
         let deserialized: UserSettings = serde_json::from_str(&json).expect("Must deserialize");
 
         assert_eq!(settings, deserialized);
-        assert_eq!(deserialized.default_format, AudioFormat::M4a);
+        assert_eq!(deserialized.default_format, AudioFormat::M4aAlac);
+
+        // Test backwards compatibility deserializing legacy strings "M4a" and "Mp3"
+        let legacy_json = r#"{"download_dir":"C:/Music","default_format":"M4a","play_while_recording":false,"max_concurrent_downloads":3,"folder_structure":""}"#;
+        let legacy_settings: UserSettings = serde_json::from_str(legacy_json).expect("Legacy M4a must deserialize");
+        assert_eq!(legacy_settings.default_format, AudioFormat::M4aAlac);
+
+        let legacy_mp3_json = r#"{"download_dir":"C:/Music","default_format":"Mp3","play_while_recording":false,"max_concurrent_downloads":3,"folder_structure":""}"#;
+        let legacy_mp3_settings: UserSettings = serde_json::from_str(legacy_mp3_json).expect("Legacy Mp3 must deserialize");
+        assert_eq!(legacy_mp3_settings.default_format, AudioFormat::Mp3_320);
+
         assert_eq!(deserialized.download_dir, PathBuf::from("C:/Custom/Music/Path"));
     }
 }

@@ -36,12 +36,14 @@ pub fn render_player_bar(
 
                     let badge_color = match item.format {
                         AudioFormat::Flac => palette.flac_badge,
-                        AudioFormat::Mp3 => palette.mp3_badge,
-                        AudioFormat::M4a => palette.m4a_badge,
+                        AudioFormat::M4aAlac | AudioFormat::Wav => palette.wav_badge,
+                        AudioFormat::Aiff => palette.aiff_badge,
+                        AudioFormat::M4aAac => palette.m4a_badge,
+                        AudioFormat::Mp3_320 | AudioFormat::Mp3_192 | AudioFormat::Mp3_128 => palette.mp3_badge,
                     };
                     let badge_text_color = match item.format {
-                        AudioFormat::Flac | AudioFormat::Mp3 => palette.text,
-                        AudioFormat::M4a => palette.on_accent,
+                        AudioFormat::Flac | AudioFormat::Mp3_320 | AudioFormat::Mp3_192 | AudioFormat::Mp3_128 => palette.text,
+                        AudioFormat::M4aAlac | AudioFormat::M4aAac | AudioFormat::Wav | AudioFormat::Aiff => palette.on_accent,
                     };
 
                     egui::Frame::NONE

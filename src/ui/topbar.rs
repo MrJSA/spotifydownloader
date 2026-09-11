@@ -78,14 +78,17 @@ pub fn render_topbar(
             ui.separator();
             ui.add_space(6.0);
 
-            // Format Switcher: MP3, M4A, FLAC (rendered in reverse so left-to-right reads: FLAC, M4A, MP3)
-            for fmt in [AudioFormat::Mp3, AudioFormat::M4a, AudioFormat::Flac] {
+            // Format Switcher: MP3 320k, AAC, ALAC, FLAC (rendered in reverse so left-to-right reads: FLAC, ALAC, AAC, MP3)
+            for fmt in AudioFormat::QUICK_PRESETS {
                 let is_active = *current_format == fmt;
                 let (fill_col, text_col, stroke) = if is_active {
                     match fmt {
                         AudioFormat::Flac => (palette.flac_badge, palette.text, Stroke::NONE),
-                        AudioFormat::Mp3 => (palette.mp3_badge, palette.text, Stroke::NONE),
-                        AudioFormat::M4a => (palette.m4a_badge, palette.on_accent, Stroke::NONE),
+                        AudioFormat::M4aAlac => (palette.wav_badge, palette.on_accent, Stroke::NONE),
+                        AudioFormat::M4aAac => (palette.m4a_badge, palette.on_accent, Stroke::NONE),
+                        AudioFormat::Mp3_320 | AudioFormat::Mp3_192 | AudioFormat::Mp3_128 => (palette.mp3_badge, palette.text, Stroke::NONE),
+                        AudioFormat::Wav => (palette.wav_badge, palette.on_accent, Stroke::NONE),
+                        AudioFormat::Aiff => (palette.aiff_badge, palette.on_accent, Stroke::NONE),
                     }
                 } else {
                     (palette.surface, palette.secondary, Stroke::new(1.0, palette.outline))
