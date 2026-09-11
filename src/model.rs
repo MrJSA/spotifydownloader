@@ -15,7 +15,7 @@ impl AudioFormat {
     pub fn display_name(&self) -> &'static str {
         match self {
             Self::Mp3 => "MP3 (320 kbps)",
-            Self::M4a => "M4A (256 kbps AAC)",
+            Self::M4a => "M4A (ALAC Lossless)",
             Self::Flac => "FLAC (Lossless)",
         }
     }

@@ -69,7 +69,7 @@ pub fn transcode_audio(
             cmd.args(["-c:a", "libmp3lame", "-b:a", "320k"]);
         }
         AudioFormat::M4a => {
-            cmd.args(["-c:a", "aac", "-b:a", "256k"]);
+            cmd.args(["-c:a", "alac"]);
         }
         AudioFormat::Flac => {
             cmd.args(["-c:a", "flac"]);
@@ -115,7 +115,7 @@ pub fn encode_pcm_to_file(
             cmd.args(["-c:a", "libmp3lame", "-b:a", "320k"]);
         }
         AudioFormat::M4a => {
-            cmd.args(["-c:a", "aac", "-b:a", "256k"]);
+            cmd.args(["-c:a", "alac"]);
         }
         AudioFormat::Flac => {
             cmd.args(["-c:a", "flac"]);

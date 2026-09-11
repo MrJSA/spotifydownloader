@@ -80,7 +80,7 @@ pub fn render_settings_view(
 
                 ui.add_space(8.0);
                 ui.label(
-                    RichText::new("• FLAC: True Lossless 16/24-bit audio stream (Best fidelity)\n• MP3: 320 kbps high-bitrate LAME encoding\n• M4A: 256 kbps AAC encoding")
+                    RichText::new("• FLAC: True Lossless 16/24-bit audio stream (Best fidelity)\n• M4A: ALAC Apple Lossless audio stream (Native Apple/iTunes Lossless)\n• MP3: 320 kbps high-bitrate LAME encoding")
                         .size(11.0)
                         .color(palette.dim),
                 );
