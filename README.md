@@ -21,6 +21,12 @@ A high-performance, modern cross-platform desktop application to search, browse,
 
 ---
 
+<p align="center">
+  <img alt="Spotify Downloader Screenshot" src=".github/screenshot1.png" width="90%">
+</p>
+
+---
+
 ## ✨ Key Features
 
 | Feature | Description |
